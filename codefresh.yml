@@ -8,7 +8,7 @@ steps:
   clone:
     title: "Cloning repository"
     type: "git-clone"
-    repo: "kostis-codefresh/simple-web-app"
+    repo: "codefresh-contrib/gitops-app-source-code"
     revision: '${{CF_REVISION}}'
     stage: "clone"
 
@@ -22,13 +22,7 @@ steps:
     - '${{CF_SHORT_REVISION}}'
     dockerfile: "Dockerfile"
     stage: "build"
-    registry: dockerhub
-  get_step_info:
-    title: Get Github token
-    stage: "metadata"
-    image: 'codefresh/cli'
-    commands:
-      - cf_export GITHUB_TOKEN=$(codefresh get context github-1 --decrypt -o yaml | yq -y .spec.data.auth.password)    
+    registry: dockerhub  
   enrich-image:
     title: Add PR info
     type: image-enricher
@@ -37,7 +31,20 @@ steps:
       IMAGE:  docker.io/kostiscodefresh/simple-web-app:latest
       BRANCH: '${{CF_BRANCH}}'
       REPO: 'kostis-codefresh/simple-web-app'
-      GITHUB_TOKEN: '${{GITHUB_TOKEN}}'
-
+      GIT_PROVIDER_NAME: github-1
+  jira-issue-extractor:
+    title: Enrich image with jira issues
+    type: jira-issue-extractor
+    stage: "metadata"
+    fail_fast: false
+    arguments:
+      IMAGE: docker.io/kostiscodefresh/simple-web-app:latest
+      JIRA_PROJECT_PREFIX: 'SAAS'
+      MESSAGE: SAAS-8431
+      JIRA_HOST: codefresh-io.atlassian.net
+      JIRA_EMAIL: kostis@codefresh.io
+      JIRA_API_TOKEN: '${{JIRA_TOKEN}}'
+    
+    
 
 
